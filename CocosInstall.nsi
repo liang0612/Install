@@ -423,7 +423,7 @@ Function InstFilesPageShow
     ${EndIf}
     SetCtlColors $0 ""  transparent ;背景设成透明
 
-    ${ChangeWindowSize} 600 480 ;改变Page大小
+    System::Call "user32::MoveWindow(i $0, i 0, i 0, i 600, i 480) i r2"
 
 		${NSD_CreateProgressBar} 70 380 460 12 ""
     Pop $PB_ProgressBar
@@ -440,10 +440,10 @@ Function InstFilesPageShow
     ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
 
     GetFunctionAddress $0 NSD_TimerFun
-    nsDialogs::CreateTimer $0 1000
+    nsDialogs::CreateTimer $0 1
     
     GetFunctionAddress $0 AirBubblesPosition
-    nsDialogs::CreateTimer $0 1000
+    nsDialogs::CreateTimer $0 1
     
     GetFunctionAddress $0 onGUICallback
     WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
@@ -481,6 +481,7 @@ Function InstallationMainFun
  		;Call NextPage
     ;SetOutPath $INSTDIR
     SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
+    Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
