@@ -41,7 +41,6 @@ Var ccstemp
 Var tex_Install ;安装文本
 Var PB_ProgressBar
 Var txt_installProgress ;安装进度文本
-Var HPB
 
 ;---------------------------全局编译脚本预定义的常量-----------------------------------------------------
 !define PRODUCT_NAME "Cocos"
@@ -126,9 +125,9 @@ ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
 Page custom  Page.1 Page.1leave
 ;Page instfiles InstFilesPageShow
 ; 安装过程页面
-;Page custom InstFilesPageShow
-!define MUI_PAGE_CUSTOMFUNCTION_SHOW InstFilesPageShow
-!insertmacro MUI_PAGE_INSTFILES
+Page custom InstFilesPageShow
+;!define MUI_PAGE_CUSTOMFUNCTION_SHOW InstFilesPageShow
+;!insertmacro MUI_PAGE_INSTFILES
 
 ; 安装完成页面
 Page custom InstallFinish
@@ -407,54 +406,16 @@ Function Page.1leave
 	IfErrors 0 +3
   MessageBox MB_ICONINFORMATION|MB_OK "'$R0' 安装目录不存在，请重新设置。"
   Return
-
 	StrCpy $INSTDIR  $R0
 FunctionEnd
 
-Function InstFilesPageShow1
-    FindWindow $R2 "#32770" "" $HWNDPARENT
-    ShowWindow $0 ${SW_HIDE}
-    
-    GetDlgItem $1 $R2 1027
-    ShowWindow $1 ${SW_HIDE}
-
-    GetDlgItem $1 $R2 1016
-    ShowWindow $1 ${SW_HIDE}
-    
-    StrCpy $R0 $R2 ;改变页面大小,不然贴图不能全页
-    System::Call "user32::MoveWindow(i R0, i 0, i 0, i 600, i 480) i r2"
-    GetFunctionAddress $0 onGUICallback
-    WndProc::onCallback $R0 $0 ;处理无边框窗体移动
-
-    GetDlgItem $R0 $R2 1004  ;设置进度条位置
-    System::Call "user32::MoveWindow(i R0, i 70, i 380, i 460, i 12) i r2"
-
-
-    FindWindow $R2 "#32770" "" $HWNDPARENT  ;获取1995并设置图片
-    GetDlgItem $R0 $R2 1995
-    System::Call "user32::MoveWindow(i R0, i 0, i 0, i 600, i 480) i r2"
-    ${NSD_SetImage} $R0 $PLUGINSDIR\bg.bmp $ImageHandle
-
-		;这里是给进度条贴图
-    FindWindow $R2 "#32770" "" $HWNDPARENT
-    GetDlgItem $5 $R2 1004
-	  SkinProgress::Set $5 "$PLUGINSDIR\ProgressBar.bmp" "$PLUGINSDIR\Progress.bmp"
-FunctionEnd
-
-
 Function InstFilesPageShow
-    FindWindow $R2 "#32770" "" $HWNDPARENT
+  	GetDlgItem $0 $HWNDPARENT 1
     ShowWindow $0 ${SW_HIDE}
-
-    GetDlgItem $1 $R2 1027
-    ShowWindow $1 ${SW_HIDE}
-
-    GetDlgItem $1 $R2 1016
-    ShowWindow $1 ${SW_HIDE}
-
-    StrCpy $R0 $R2 ;改变页面大小,不然贴图不能全页
-    System::Call "user32::MoveWindow(i R0, i 0, i 0, i 600, i 480) i r2"
-    
+    GetDlgItem $0 $HWNDPARENT 2
+    ShowWindow $0 ${SW_HIDE}
+    GetDlgItem $0 $HWNDPARENT 3
+    ShowWindow $0 ${SW_HIDE}
     nsDialogs::Create 1044
     Pop $0
     ${If} $0 == error
@@ -519,7 +480,7 @@ FunctionEnd
 Function InstallationMainFun
  		;Call NextPage
     ;SetOutPath $INSTDIR
-    SendMessage $PB_ProgressBar ${PBM_SETRANGE} 0 100
+    SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
