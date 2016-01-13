@@ -132,11 +132,14 @@ Page custom InstFilesPageShow
 ; 安装完成页面
 Page custom InstallFinish
 
+!define MUI_CUSTOMFUNCTION_UNGUIINIT un.onGUIInit1
 # 自定义卸载界面 Custom UninstPage
 UninstPage custom un.UnPageWelcome
 ;卸载反馈页面
 UninstPage custom un.FeedbackPage
-UninstPage custom un.InstallFiles
+;UninstPage custom un.InstallFiles
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.InstallFiles1
+!insertmacro MUI_UNPAGE_INSTFILES
 Uninstpage custom un.InstallFinish
 
 ; 安装界面包含的语言设置
@@ -195,7 +198,7 @@ Function .onInit
 	  File `/oname=$PLUGINSDIR\Progress.bmp` `images\empty_bg.bmp`
   	File `/oname=$PLUGINSDIR\ProgressBar.bmp` `images\full_bg.bmp`
    	File `/oname=$PLUGINSDIR\successful.bmp` `images\successful.bmp`
-  	
+  	LogSet on
     ;初始化
     SkinBtn::Init "$PLUGINSDIR\btn_strongbtn.bmp"
     SkinBtn::Init "$PLUGINSDIR\btn_Close.bmp"
@@ -449,7 +452,6 @@ Function InstFilesPageShow
     WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
     nsDialogs::Show
     ${NSD_FreeImage} $ImageHandle
-
 FunctionEnd
 
 Var proPosition
@@ -479,11 +481,12 @@ FunctionEnd
 
 Function InstallationMainFun
  		;Call NextPage
-    ;SetOutPath $INSTDIR
+ 		WriteUninstaller "$INSTDIR\uninst.exe"
+    SetOutPath $INSTDIR
     SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
     Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
-  	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
+  	File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	Sleep 1000
@@ -504,7 +507,7 @@ Function InstallationMainFun
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 90 0
   	Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 100 0
-    WriteUninstaller "$INSTDIR\uninst.exe"
+    
     Call NextPage
 FunctionEnd
 
@@ -672,9 +675,6 @@ Function xllicense
   ExecShell "open" "http://api.cocos.com/cn/LICENSE%20AGREEMENT%20CN.pdf"
 FunctionEnd
 
-Section "-LogSetOn"
-  LogSet on
-SectionEnd
 
 Section MainSetup
 DetailPrint "安装Cocos中..."
@@ -704,7 +704,6 @@ SendMessage $PB_ProgressBar ${PBM_SETRANGE} 0 100
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 90 0
     Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 100 0
-
 Sleep 50
 Sleep 50
 Sleep 50
@@ -812,7 +811,7 @@ Function un.onInit
   	SkinBtn::Init "$PLUGINSDIR\ck1_1.bmp"
 FunctionEnd
 
-Function un.onGUIInit
+Function un.onGUIInit1
   System::Call `user32::SetWindowLong(i$HWNDPARENT,i${GWL_STYLE},0x9480084C)i.R0`
     ;隐藏一些既有控件
     GetDlgItem $0 $HWNDPARENT 1034
@@ -877,11 +876,6 @@ Function un.UnPageWelcome
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $R1 $0
 	
-  ${NSD_CreateButton} 50 50 100 40 "Button"
-  Pop $1
-  SetCtlColors $1 0xEFEFEF
-  SkinButton::SetSkin $1 $PLUGINSDIR\button1.png
-	NSISVCLStyles::RemoveStyleControl $1
   ${NSD_CreateLabel} 113 247 287 30 "你讨厌我什么,我改还不好么?"
   Pop $toolTipText
   SetCtlColors $toolTipText fffffff transparent
@@ -1094,6 +1088,45 @@ Function un.onGUICallback
     SendMessage $HWNDPARENT ${WM_NCLBUTTONDOWN} ${HTCAPTION} $0
   ${EndIf}
 FunctionEnd
+Function un.InstallFiles1
+    FindWindow $R2 "#32770" "" $HWNDPARENT
+
+    ShowWindow $0 ${SW_HIDE}
+    GetDlgItem $1 $R2 1027
+    ShowWindow $0 ${SW_HIDE}
+
+    GetDlgItem $1 $R2 1
+    ShowWindow $1 ${SW_HIDE}
+    GetDlgItem $1 $R2 2
+    ShowWindow $1 ${SW_HIDE}
+    GetDlgItem $1 $R2 3
+    ShowWindow $1 ${SW_HIDE}
+
+  StrCpy $R0 $R2 ;改变页面大小,不然贴图不能全页
+  System::Call "user32::MoveWindow(i R0, i 0, i 0, i 520, i 400) i r2"
+  SetCtlColors $R0 ""  transparent ;背景设成透明
+  GetFunctionAddress $0 un.onGUICallback
+  WndProc::onCallback $R0 $0 ;处理无边框窗体移动
+
+  GetDlgItem $R0 $R2 1004  ;设置进度条位置
+  System::Call "user32::MoveWindow(i R0, i 16, i 325, i 481, i 18) i r2"
+
+  GetDlgItem $R1 $R2 1006  ;进度条上面的标签.
+  NSISVCLStyles::RemoveStyleControl $R1
+  SetCtlColors $R1 ""  FFFFFF ;背景设成F6F6F6,注意颜色不能设为透明，否则重叠
+  System::Call "user32::MoveWindow(i R1, i 16, i 350, i 481, i 12) i r2"
+
+  
+  FindWindow $R2 "#32770" "" $HWNDPARENT  ;获取1995并设置图片
+  GetDlgItem $R0 $R2 1995
+  System::Call "user32::MoveWindow(i R0, i 0, i 0, i 498, i 373) i r2"
+  ${NSD_SetImage} $R0 $PLUGINSDIR\bg.bmp $ImageHandle
+
+		;这里是给进度条贴图
+  FindWindow $R2 "#32770" "" $HWNDPARENT
+  GetDlgItem $5 $R2 1004
+	;SkinProgress::Set $5 "$PLUGINSDIR\ProgressBar.bmp" "$PLUGINSDIR\Progress.bmp"
+FunctionEnd
 
 Function un.InstallFiles
   GetDlgItem $0 $HWNDPARENT 1 ;下一步/关闭 按钮
@@ -1134,10 +1167,14 @@ Function un.InstallFiles
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $toolTipText $0
 	NSISVCLStyles::RemoveStyleControl $toolTipText
-
+	
+	${NSD_CreateProgressBar} 16 325 481 24 ""
+  Pop $PB_ProgressBar
+	
 	${NSD_CreateBitmap} 159 38 200 200 ""
 	Pop $0
 	${NSD_SetImage} $0 $PLUGINSDIR\logo.bmp $1
+
 
 	GetFunctionAddress $3 un.onGUICallback
   WndProc::onCallback $0 $3 ;处理无边框窗体移动
@@ -1146,7 +1183,10 @@ Function un.InstallFiles
   ${NSD_CreateBitmap} 0 0 100% 100% ""
   Pop $BGImage
   ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
-
+  
+  GetFunctionAddress $0 un.NSD_TimerFun
+  nsDialogs::CreateTimer $0 1
+  
   GetFunctionAddress $0 un.onGUICallback
   WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
   WndProc::onCallback $BGImageLong $0 ;处理无边框窗体移动
@@ -1154,7 +1194,6 @@ Function un.InstallFiles
 FunctionEnd
 
 Function un.InstallFinish
-
   GetDlgItem $0 $HWNDPARENT 1 ;下一步/关闭 按钮
   ShowWindow $0 ${SW_HIDE}    ;隐藏
   GetDlgItem $0 $HWNDPARENT 2 ;取消 按钮
@@ -1184,7 +1223,11 @@ Function un.InstallFinish
 	${CustomSetFont} $R1 "微软雅黑" 16 400
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $R1 $0
-
+	
+  ${NSD_CreateButton} 203 311 113 41 "完成"
+  Pop $0
+  GetFunctionAddress $1 un.FinishClick
+  SkinBtn::onClick $0 $1
 
   ${NSD_CreateLabel} 100 247 300 30 "感谢与你一起度过了美好时光~"
   Pop $toolTipText
@@ -1220,6 +1263,25 @@ Function un.NextPage
   Move:
   SendMessage $HWNDPARENT "0x408" "$R9" ""
   Abort
+FunctionEnd
+
+Function un.NSD_TimerFun
+    GetFunctionAddress $0 un.NSD_TimerFun
+    nsDialogs::KillTimer $0
+    !if 1   ;是否在后台运行,1有效
+        GetFunctionAddress $0 un.InstallationMainFun
+        BgWorker::CallAndWait
+    !else
+        Call un.InstallationMainFun
+    !endif
+FunctionEnd
+
+Function un.InstallationMainFun
+
+FunctionEnd
+
+Function un.FinishClick
+SendMessage $HWNDPARENT ${WM_CLOSE} 0 0
 FunctionEnd
 
 Function un.ck1Click
@@ -1361,4 +1423,108 @@ Function un.ck8Click
 		Pop $ck8Flag
 	${EndIf}
 FunctionEnd
+; 以下是卸载程序通过安装日志卸载文件的专用函数，请不要随意修改
+!macro DelFileByLog LogFile
+  ifFileExists `${LogFile}` 0 +4
+    Push `${LogFile}`
+    Call un.DelFileByLog
+    Delete `${LogFile}`
+!macroend
 
+Function un.DelFileByLog
+  Exch $R0
+  Push $R1
+  Push $R2
+  Push $R3
+  FileOpen $R0 $R0 r
+  ${Do}
+    FileRead $R0 $R1
+    ${IfThen} $R1 == `` ${|} ${ExitDo} ${|}
+    StrCpy $R1 $R1 -2
+    StrCpy $R2 $R1 11
+    StrCpy $R3 $R1 20
+    ${If} $R2 == "File: wrote"
+    ${OrIf} $R2 == "File: skipp"
+    ${OrIf} $R3 == "CreateShortCut: out:"
+    ${OrIf} $R3 == "created uninstaller:"
+      Push $R1
+      Push `"`
+      Call un.DelFileByLog.StrLoc
+      Pop $R2
+      ${If} $R2 != ""
+        IntOp $R2 $R2 + 1
+        StrCpy $R3 $R1 "" $R2
+        Push $R3
+        Push `"`
+        Call un.DelFileByLog.StrLoc
+        Pop $R2
+        ${If} $R2 != ""
+          StrCpy $R3 $R3 $R2
+          Delete /REBOOTOK $R3
+        ${EndIf}
+      ${EndIf}
+    ${EndIf}
+    StrCpy $R2 $R1 7
+    ${If} $R2 == "Rename:"
+      Push $R1
+      Push "->"
+      Call un.DelFileByLog.StrLoc
+      Pop $R2
+      ${If} $R2 != ""
+        IntOp $R2 $R2 + 2
+        StrCpy $R3 $R1 "" $R2
+        Delete /REBOOTOK $R3
+      ${EndIf}
+    ${EndIf}
+  ${Loop}
+  FileClose $R0
+  Pop $R3
+  Pop $R2
+  Pop $R1
+  Pop $R0
+FunctionEnd
+
+Function un.DelFileByLog.StrLoc
+  Exch $R0
+  Exch
+  Exch $R1
+  Push $R2
+  Push $R3
+  Push $R4
+  Push $R5
+  StrLen $R2 $R0
+  StrLen $R3 $R1
+  StrCpy $R4 0
+  ${Do}
+    StrCpy $R5 $R1 $R2 $R4
+    ${If} $R5 == $R0
+    ${OrIf} $R4 = $R3
+      ${ExitDo}
+    ${EndIf}
+    IntOp $R4 $R4 + 1
+  ${Loop}
+  ${If} $R4 = $R3
+    StrCpy $R0 ""
+  ${Else}
+    StrCpy $R0 $R4
+  ${EndIf}
+  Pop $R5
+  Pop $R4
+  Pop $R3
+  Pop $R2
+  Pop $R1
+  Exch $R0
+FunctionEnd
+
+Section Uninstall
+  ;!insertmacro MUI_STARTMENU_GETFOLDER "Application" $ICONS_GROUP
+  ;Delete "$INSTDIR\${PRODUCT_NAME}.url"
+  Delete "$INSTDIR\uninst.exe"
+  ; 调用宏只根据安装日志卸载安装程序自己安装过的文件
+  !insertmacro DelFileByLog "$INSTDIR\install.log"
+; 清除安装程序创建的且在卸载时可能为空的子目录，对于递归添加的文件目录，请由最内层的子目录开始清除(注意，不要带 /r 参数，否则会失去 DelFileByLog 的意义)
+  ;RMDir "$SMPROGRAMS\$ICONS_GROUP"
+  ;Delete "$INSTDIR\install.log"
+
+	Call un.NextPage
+SectionEnd
