@@ -427,7 +427,7 @@ Function InstFilesPageShow
     SetCtlColors $0 ""  transparent ;±³¾°Éè³ÉÍ¸Ã÷
 
     System::Call "user32::MoveWindow(i $0, i 0, i 0, i 600, i 480) i r2"
-
+		${ChangeWindowSize} 600 480
 		${NSD_CreateProgressBar} 70 380 460 12 ""
     Pop $PB_ProgressBar
 	  SkinProgress::Set $PB_ProgressBar "$PLUGINSDIR\ProgressBar.bmp" "$PLUGINSDIR\Progress.bmp"
@@ -482,15 +482,16 @@ FunctionEnd
 Function InstallationMainFun
  		;Call NextPage
  		WriteUninstaller "$INSTDIR\uninst.exe"
-    SetOutPath $INSTDIR
+    SetOutPath "$INSTDIR\Cocos Studio"
     SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
     Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
-  	File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
+  	File /r "F:\Work3.0\Mono_3.0\build\Temp\ReleaseWin32\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
-  	Sleep 1000
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 20 0
+  	;SetOutPath "$INSTDIR\Cocos2d-x-3.10"
+  	;File /r "F:\Work3.0\Mono_3.0\build\Temp\2dx\Cocos2d-x\*.*"
   	Sleep 1000
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 30 0
   	Sleep 1000
@@ -1126,6 +1127,7 @@ Function un.InstallFiles1
   FindWindow $R2 "#32770" "" $HWNDPARENT
   GetDlgItem $5 $R2 1004
 	;SkinProgress::Set $5 "$PLUGINSDIR\ProgressBar.bmp" "$PLUGINSDIR\Progress.bmp"
+	
 FunctionEnd
 
 Function un.InstallFiles
