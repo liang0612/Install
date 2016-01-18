@@ -105,8 +105,6 @@ ReserveFile `${NSISDIR}\Plugins\nsisSlideshow.dll`
 ReserveFile `${NSISDIR}\Plugins\FindProcDLL.dll`
 ReserveFile `${NSISDIR}\Plugins\Resource.dll`
 ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
-ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
-
 
 ; ------ MUI 现代界面定义 (1.67 版本以上兼容) ------
 !include "MUI.nsh"
@@ -125,7 +123,7 @@ ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
 Page custom  Page.1 Page.1leave
 ;Page instfiles InstFilesPageShow
 ; 安装过程页面
-Page custom InstFilesPageShow
+Page custom InstFilesPageShow InstallFilesFinish
 ;!define MUI_PAGE_CUSTOMFUNCTION_SHOW InstFilesPageShow
 ;!insertmacro MUI_PAGE_INSTFILES
 
@@ -453,6 +451,10 @@ Function InstFilesPageShow
     nsDialogs::Show
     ${NSD_FreeImage} $ImageHandle
 FunctionEnd
+;安装完成处理
+Function InstallFilesFinish
+call WriterRegistry
+FunctionEnd
 
 Var proPosition
 Function AirBubblesPosition
@@ -479,6 +481,20 @@ Function NSD_TimerFun
     !endif
 FunctionEnd
 
+Var BANNER
+Var COUNT
+Var ARCHIVE
+
+Function ServiceCallback
+ 	Pop $R8
+  Pop $R9
+  System::Int64Op $R8 * 100
+  Pop $R0
+  System::Int64Op $R0 / $R9
+  Pop $R3
+  SendMessage $PB_ProgressBar ${PBM_SETPOS} $R3 0
+FunctionEnd
+
 Function InstallationMainFun
  		;Call NextPage
  		WriteUninstaller "$INSTDIR\uninst.exe"
@@ -490,25 +506,15 @@ Function InstallationMainFun
   	;SetOutPath "$DOCUMENTS\Cocos1"
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 20 0
-  	;SetOutPath "$INSTDIR\Cocos2d-x-3.10"
-  	;File /r "F:\Work3.0\Mono_3.0\build\Temp\2dx\Cocos2d-x\*.*"
-  	Sleep 1000
+  	SetOutPath $INSTDIR
+  	;File /r "F:\Work3.0\Mono_3.0\build\Temp\Temp.7z"
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 30 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 40 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 50 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 60 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 70 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 80 0
-  	Sleep 1000
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 90 0
-  	Sleep 1000
+  	
+		;GetFunctionAddress $R9 ServiceCallback
+  	;Nsis7z::ExtractWithCallback "Temp.7z" $R9
+  
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 100 0
-    
+    Sleep 1000
     Call NextPage
 FunctionEnd
 
@@ -647,6 +653,15 @@ Function onCustonClick
  		Push "True"
  		Pop $flag
 	${EndIf}
+FunctionEnd
+;写注册表
+Function WriterRegistry
+	WriteRegStr HKLM "SOFTWARE\ChuKong\Cocos\CocosStudio" "AppFolder" "$INSTDIR\Cocos Studio"
+FunctionEnd
+
+;创建快捷方式
+FunctionEnd CreateShortcut
+
 FunctionEnd
 
 ;打开安装目录
