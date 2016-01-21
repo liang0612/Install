@@ -41,7 +41,7 @@ Var ccstemp
 Var tex_Install ;安装文本
 Var PB_ProgressBar
 Var txt_installProgress ;安装进度文本
-
+var IsEnglish ;当前语言是否是英文
 ;---------------------------全局编译脚本预定义的常量-----------------------------------------------------
 !define PRODUCT_NAME "Cocos"
 !define PRODUCT_VERSION "3.10"
@@ -79,11 +79,15 @@ ShowUnInstDetails nevershow ;设置是否显示删除详细信息。
 
 ;使用ReserveFile是加快安装包展开速度，具体请看帮助
 ReserveFile "images\CocosBG.png"
+ReserveFile "images\CocosBG_EN.bmp"
 ReserveFile "images\close.bmp"
 ReserveFile "images\browse.bmp"
+ReserveFile "images\browse_CT.bmp"
+ReserveFile "images\browse_EN.bmp"
 ReserveFile "images\custom.bmp"
 ReserveFile "images\install.bmp"
 ReserveFile "images\CocosBG_long.bmp"
+ReserveFile "images\CocosBG_EN_long.bmp"
 ReserveFile "images\empty_bg.bmp"
 ReserveFile "images\full_bg.bmp"
 ReserveFile "images\express.bmp"
@@ -103,8 +107,8 @@ ReserveFile `${NSISDIR}\Plugins\System.dll`
 ReserveFile `${NSISDIR}\Plugins\WndProc.dll`
 ReserveFile `${NSISDIR}\Plugins\nsisSlideshow.dll`
 ReserveFile `${NSISDIR}\Plugins\FindProcDLL.dll`
-ReserveFile `${NSISDIR}\Plugins\Resource.dll`
-ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
+ReserveFile `Plugins\Resource.dll`
+ReserveFile `Plugins\nsResize.dll`
 
 ; ------ MUI 现代界面定义 (1.67 版本以上兼容) ------
 !include "MUI.nsh"
@@ -114,9 +118,10 @@ ReserveFile `${NSISDIR}\Plugins\nsResize.dll`
 !include "WinMessages.nsh"
 !include "LoadRTF.nsh"
 !include "nsResize.nsh"
-
+!include "FileFunc.nsh"
 !include "nsDialogs_createTextMultiline.nsh"
 !include "LogicLib.nsh"
+
 
 !define MUI_CUSTOMFUNCTION_GUIINIT onGUIInit
 ;自定义页面
@@ -141,8 +146,11 @@ UninstPage custom un.FeedbackPage
 Uninstpage custom un.InstallFinish
 
 ; 安装界面包含的语言设置
+!insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "SimpChinese"
+!insertmacro MUI_LANGUAGE "TradChinese"
 
+!include "Language\CocosLanguage.nsi"
 
 !macro __ChangeWindowSize width hight
 	${NSW_SetWindowSize} $HWNDPARENT ${width} ${hight}
@@ -182,12 +190,30 @@ Uninstpage custom un.InstallFinish
 !define MoveControlPositon `!insertmacro __MoveControl`
 
 Function .onInit
+  	Push ${LANG_ENGLISH}
+    
+   	Pop $LANGUAGE
+		${If} $LANGUAGE == 1033
+    	Push True
+   		Pop $IsEnglish
+    ${Else}
+      Push False
+   		Pop $IsEnglish
+		${EndIf}
+
     InitPluginsDir ;初始化插件
-    File `/ONAME=$PLUGINSDIR\bg.bmp` `images\CocosBG.bmp` ;第一大背景CocosBG_long.bmp
+    File `/ONAME=$PLUGINSDIR\bg.bmp` `images\CocosBG.bmp` ;第一背景
 		File `/ONAME=$PLUGINSDIR\bgLong.bmp` `images\CocosBG_long.bmp` ;第一大背景
     
+    File `/ONAME=$PLUGINSDIR\bgEN.bmp` `images\CocosBG_EN.bmp` ;第一背景
+    File `/ONAME=$PLUGINSDIR\bgLongEN.bmp` `images\CocosBG_EN_long.bmp` ;第一大背景
+    
     File `/oname=$PLUGINSDIR\btn_install.bmp` `images\install.bmp` ;立即安装
+    
 		File `/oname=$PLUGINSDIR\browse.bmp` `images\browse.bmp` ;浏览按钮背景
+		File `/oname=$PLUGINSDIR\browse_CT.bmp` `images\browse_CT.bmp` ;浏览按钮背景
+		File `/oname=$PLUGINSDIR\browse_EN.bmp` `images\browse_EN.bmp` ;浏览按钮背景
+		
     File `/oname=$PLUGINSDIR\btn_Close.bmp` `images\Close.bmp` ;关闭
     File `/oname=$PLUGINSDIR\btn_custom.bmp` `images\custom.bmp`  ;自定义安装
     File `/oname=$PLUGINSDIR\btn_express.bmp` `images\express.bmp` ;立即体验
@@ -315,10 +341,10 @@ Function Page.1
 #------------------------------------------
 #自定义展开之后的控件
 #------------------------------------------
-    ${NSD_CreateLabel} 20 436 80 25 "安装目录 :"
+    ${NSD_CreateLabel} 20 436 80 25 $(MSG_InstallDir)
     Pop $txt_installDir
     SetCtlColors $txt_installDir 363636 FFFFFF
-		${CustomSetFont} $txt_installDir "微软雅黑" 12 550
+		${CustomSetFont} $txt_installDir "微软雅黑" 12 0
 		ShowWindow $txt_installDir ${SW_HIDE}
 		
 		;安装目录文本框
@@ -330,9 +356,9 @@ Function Page.1
 		ShowWindow $txb_AppFolder ${SW_HIDE}
 		
 		;浏览按钮
-		${NSD_CreateButton} 442 435 60 25 ""
+		${NSD_CreateButton} 442 435 60 28 ""
     Pop $btn_browse
-    SkinBtn::Set /IMGID=$PLUGINSDIR\btn_browse.bmp $btn_browse
+    SkinBtn::Set /IMGID=$(MSG_Browse) $btn_browse
     ${NSD_OnClick} $btn_browse SelectAppFolder
 		ShowWindow $btn_browse ${SW_HIDE}
 		
@@ -348,13 +374,13 @@ Function Page.1
 		${CustomSetFont} $txt_AvailableSpace "微软雅黑" 10 550
 		ShowWindow $txt_AvailableSpace ${SW_HIDE}
 		
-		${NSD_CreateLabel} 20 497 80 25 "安装选项 :"
+		${NSD_CreateLabel} 20 497 80 25 $(MSG_InstallOptions)
     Pop $tex_installOptions
     SetCtlColors $tex_installOptions 363636 FFFFFF
 		${CustomSetFont} $tex_installOptions "微软雅黑" 12 550
 		ShowWindow $tex_installOptions ${SW_HIDE}
 		
-		${NSD_CreateCheckbox} 100 520 300 25 " 框架		Cocos2d-x"
+		${NSD_CreateCheckbox} 100 520 300 25 $(MSG_Cocos2dx)
     Pop $ckb_cocos2d
     SetCtlColors $ckb_cocos2d "" FFFFFF
     ${NSD_Check} $ckb_cocos2d
@@ -362,7 +388,7 @@ Function Page.1
 		ShowWindow $ckb_cocos2d ${SW_HIDE}
     EnableWindow $ckb_cocos2d 0
     
-		${NSD_CreateCheckbox} 100 547 300 25 " 编辑器		CocosStudio"
+		${NSD_CreateCheckbox} 100 547 300 25 $(MSG_CocosStudio)
     Pop $ckb_CocosStudio
     SetCtlColors $ckb_CocosStudio "" FFFFFF
     ${NSD_Check} $ckb_CocosStudio
@@ -371,27 +397,27 @@ Function Page.1
 #------------------------------------------
 #许可协议
 #------------------------------------------
-    ${NSD_CreateCheckbox} 20 432 100 20 "已阅读并同意"
+    ${NSD_CreateCheckbox} 20 432 100 20 $(MSG_CheckLince)
     Pop $cbk_license
     SetCtlColors $cbk_license "" FFFFFF
     ${NSD_Check} $cbk_license
     ${NSD_OnClick} $cbk_license Chklicense
     
-    ${NSD_CreateLink} 124 435 100 16 "Cocos服务条款"
+    ${NSD_CreateLink} 124 435 100 16 $(MSG_CocosAgreement)
     Pop $Txt_Xllicense
     SetCtlColors $Txt_Xllicense 0074F3 FFFFFF
     ${NSD_OnClick} $Txt_Xllicense xllicense
-
+ 		
     ${NSD_CreateBitmap} 0 0 100% 100% ""
     Pop $BGImageLong
-    ${NSD_SetImage} $BGImageLong $PLUGINSDIR\bgLong.bmp $ImageHandleLong
+    ${NSD_SetImage} $BGImageLong $(MSG_BGImage_Long) $ImageHandleLong
     ShowWindow $BGImageLong ${SW_HIDE}
 
     ;贴背景大图
-    ${NSD_CreateBitmap} 0 0 100% 100% ""
+    ${NSD_CreateBitmap} 0 0 600 665 ""
     Pop $BGImage
-    ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
-
+    ${NSD_SetImage} $BGImage $(MSG_BGImage) $ImageHandle
+    call EnglishPageSmall
     GetFunctionAddress $0 onGUICallback
     WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
     WndProc::onCallback $BGImageLong $0 ;处理无边框窗体移动
@@ -405,9 +431,28 @@ Function Page.1leave
 	ClearErrors
 	CreateDirectory "$R0"
 	IfErrors 0 +3
-  MessageBox MB_ICONINFORMATION|MB_OK "'$R0' 安装目录不存在，请重新设置。"
+  MessageBox MB_ICONINFORMATION|MB_OK "'$R0' $(MSG_DirNotExist)"
   Return
 	StrCpy $INSTDIR  $R0
+FunctionEnd
+
+;窗口未展开时英文页面布局
+Function EnglishPageSmall
+	${If} $IsEnglish == True
+ 		nsResize::Set $cbk_license 20 432 200 16
+ 		nsResize::Set $Txt_Xllicense 35 450 200 16
+ 	${EndIf}
+FunctionEnd
+
+;窗口展开时英文页面布局
+Function EnglishPageExpand
+	${If} $IsEnglish == True
+		nsResize::Set $txt_installDir 20 436 120 25
+		nsResize::Set $txb_AppFolder 140 435 334 25
+    nsResize::Set $btn_browse  480 435 60 25
+  	nsResize::Set $cbk_license 20 625 200 20
+ 		nsResize::Set $Txt_Xllicense 35 645 200 16
+ 	${EndIf}
 FunctionEnd
 
 Function InstFilesPageShow
@@ -502,7 +547,7 @@ Function InstallationMainFun
     SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
     Sleep 1000
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
-  	File /r "F:\Work3.0\Mono_3.0\build\Temp\ReleaseWin32\*.*"
+  	;File /r "F:\Work3.0\Mono_3.0\build\Temp\ReleaseWin32\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 20 0
@@ -548,7 +593,7 @@ Function InstallFinish
 		Pop $0
 		${NSD_SetImage} $0 $PLUGINSDIR\successful.bmp $1
 
-		${NSD_CreateLabel} 266 328 200 50 "安装成功!"
+		${NSD_CreateLabel} 266 328 200 50 $(MSG_InstallSuccessful)
 		Pop $0
 		SetCtlColors $0 363636 FFFFFF
 		${CustomSetFont} $0 "微软雅黑" 18 400
@@ -577,7 +622,7 @@ Function Page.4
 FunctionEnd
 
 Function ABORT
-	MessageBox MB_ICONQUESTION|MB_YESNO|MB_ICONSTOP '您确定要退Cocos安装程序？' IDNO CANCEL
+	MessageBox MB_ICONQUESTION|MB_YESNO|MB_ICONSTOP $(MSG_QuitCocos) IDNO CANCEL
 	SendMessage $hwndparent ${WM_CLOSE} 0 0
 	CANCEL:
 	Abort
@@ -589,13 +634,15 @@ Function onClickins
 FunctionEnd
 
 Function SelectAppFolder
-	nsDialogs::SelectFolderDialog /NOUNLOAD "选择Cocos2d安装目录" $AppFolder
+	nsDialogs::SelectFolderDialog /NOUNLOAD $(MSG_SelectDirIn2dx)
 	Pop $0
 	${If} $0 != "error"
 		Push $0
 		Pop $AppFolder
 	${EndIf}
 	${NSD_SetText} $txb_AppFolder $AppFolder
+	${DriveSpace} $AppFolder "/D=F /S=M" $R0
+	IntOp $R0 $R0 / 1024
 FunctionEnd
 
 ;处理页面跳转的命令
@@ -631,10 +678,11 @@ Function onCustonClick
  		nsResize::Set $btn_ins 480 435 92 16
  		nsResize::Set $cbk_license 20 432 100 20
  		nsResize::Set $Txt_Xllicense 124 435 100 16
+		Call EnglishPageSmall
  		Push "False"
 		Pop $flag
 	${Else}
-		${ChangeWindowSize} 600 630
+		${ChangeWindowSize} 600 665
 		ShowWindow $BGImage ${SW_HIDE}
 		ShowWindow $BGImageLong ${SW_SHOW}
 		
@@ -649,7 +697,7 @@ Function onCustonClick
  		nsResize::Set $btn_ins 480 585 92 16
  		nsResize::Set $cbk_license 20 582 100 20
  		nsResize::Set $Txt_Xllicense 124 585 100 16
-
+    call EnglishPageExpand
  		Push "True"
  		Pop $flag
 	${EndIf}
@@ -660,7 +708,7 @@ Function WriterRegistry
 FunctionEnd
 
 ;创建快捷方式
-FunctionEnd CreateShortcut
+Function CreateShortcut
 
 FunctionEnd
 
