@@ -42,6 +42,8 @@ Var tex_Install ;安装文本
 Var PB_ProgressBar
 Var txt_installProgress ;安装进度文本
 var IsEnglish ;当前语言是否是英文
+Var txt_Userdata ;用户数据文本
+Var txb_AppDocument ;用户数据保存位置
 ;---------------------------全局编译脚本预定义的常量-----------------------------------------------------
 !define PRODUCT_NAME "Cocos"
 !define PRODUCT_VERSION "3.10"
@@ -78,7 +80,6 @@ ShowUnInstDetails nevershow ;设置是否显示删除详细信息。
 !define MUI_UI "UI\mod.exe"
 
 ;使用ReserveFile是加快安装包展开速度，具体请看帮助
-ReserveFile "images\CocosBG.png"
 ReserveFile "images\CocosBG_EN.bmp"
 ReserveFile "images\close.bmp"
 ReserveFile "images\browse.bmp"
@@ -91,6 +92,8 @@ ReserveFile "images\CocosBG_EN_long.bmp"
 ReserveFile "images\empty_bg.bmp"
 ReserveFile "images\full_bg.bmp"
 ReserveFile "images\express.bmp"
+ReserveFile "images\express_CT.bmp"
+ReserveFile "images\express_EN.bmp"
 ReserveFile "images\AirBubbles.bmp"
 ReserveFile "images\successful.bmp"
 ReserveFile "images\ck1.bmp"
@@ -154,6 +157,7 @@ Uninstpage custom un.InstallFinish
 
 !macro __ChangeWindowSize width hight
 	${NSW_SetWindowSize} $HWNDPARENT ${width} ${hight}
+	${NSW_SetWindowSize} $page1HNW ${width} ${hight}
   System::Alloc 16
   System::Call user32::GetWindowRect(i$HWNDPARENT,isR0)
   System::Call *$R0(i.R1,i.R2,i.R3,i.R4)
@@ -191,7 +195,6 @@ Uninstpage custom un.InstallFinish
 
 Function .onInit
   	Push ${LANG_ENGLISH}
-    
    	Pop $LANGUAGE
 		${If} $LANGUAGE == 1033
     	Push True
@@ -216,8 +219,12 @@ Function .onInit
 		
     File `/oname=$PLUGINSDIR\btn_Close.bmp` `images\Close.bmp` ;关闭
     File `/oname=$PLUGINSDIR\btn_custom.bmp` `images\custom.bmp`  ;自定义安装
+    
     File `/oname=$PLUGINSDIR\btn_express.bmp` `images\express.bmp` ;立即体验
-    File `/oname=$PLUGINSDIR\AirBubbles.bmp` `images\AirBubbles.bmp` ;立即体验
+    File `/oname=$PLUGINSDIR\btn_express_CT.bmp` `images\express_CT.bmp` ;立即体验
+    File `/oname=$PLUGINSDIR\btn_express_EN.bmp` `images\express_EN.bmp` ;立即体验
+    
+    File `/oname=$PLUGINSDIR\AirBubbles.bmp` `images\AirBubbles.bmp`
     ;进度条皮肤
 	  File `/oname=$PLUGINSDIR\Progress.bmp` `images\empty_bg.bmp`
   	File `/oname=$PLUGINSDIR\ProgressBar.bmp` `images\full_bg.bmp`
@@ -315,8 +322,7 @@ Function Page.1
     ${EndIf}
     SetCtlColors $page1HNW ""  transparent ;背景设成透明
 
-    ${NSW_SetWindowSize} $page1HNW 600 630 ;改变Page大小
-    
+  	${NSW_SetWindowSize} $page1HNW 600 480
     ;自定义安装按钮
     ${NSD_CreateButton} 480 435 92 16 ""
     Pop $btn_ins
@@ -348,27 +354,27 @@ Function Page.1
 		ShowWindow $txt_installDir ${SW_HIDE}
 		
 		;安装目录文本框
-		${NSD_CreateText} 100 435 334 25 "C:\Cocos"
+		${NSD_CreateText} 100 435 395 25 "C:\Cocos"
 		Pop $txb_AppFolder
 		SetCtlColors $txb_AppFolder 363636 FFFFFF
-		${CustomSetFont} $txb_AppFolder "微软雅黑" 12 550
+		${CustomSetFont} $txb_AppFolder "微软雅黑" 10 550
 		${NSD_SetText} $txb_AppFolder $AppFolder
 		ShowWindow $txb_AppFolder ${SW_HIDE}
 		
 		;浏览按钮
-		${NSD_CreateButton} 442 435 60 28 ""
+		${NSD_CreateButton} 500 435 60 25 ""
     Pop $btn_browse
     SkinBtn::Set /IMGID=$(MSG_Browse) $btn_browse
     ${NSD_OnClick} $btn_browse SelectAppFolder
 		ShowWindow $btn_browse ${SW_HIDE}
 		
-    ${NSD_CreateLabel} 100 472 180 25 "所需空间 : 141.1MB"
+    ${NSD_CreateLabel} 100 472 180 25 $(MSG_FilesSize)
     Pop $txt_FileSize
     SetCtlColors $txt_FileSize 363636 FFFFFF
 		${CustomSetFont} $txt_FileSize "微软雅黑" 10 550
 		ShowWindow $txt_FileSize ${SW_HIDE}
 
-    ${NSD_CreateLabel} 280 472 200 25 "可用空间 : 10.14GB"
+    ${NSD_CreateLabel} 280 472 200 25 $(MSG_AvailableSpace)
     Pop $txt_AvailableSpace
     SetCtlColors $txt_AvailableSpace 363636 FFFFFF
 		${CustomSetFont} $txt_AvailableSpace "微软雅黑" 10 550
@@ -394,6 +400,31 @@ Function Page.1
     ${NSD_Check} $ckb_CocosStudio
 		${CustomSetFont} $ckb_CocosStudio "微软雅黑" 10 550
 		ShowWindow $ckb_CocosStudio ${SW_HIDE}
+		
+		${NSD_CreateLabel} 100 580 120 25 $(MSG_Userdata)
+		Pop $txt_Userdata
+		SetCtlColors $txt_Userdata "" FFFFFF
+		${CustomSetFont} $txt_Userdata "微软雅黑" 10 550
+		
+		${NSD_CreateText} 220 580 270 25 $DOCUMENTS
+		Pop $txb_AppDocument
+		SetCtlColors $txb_AppDocument 363636 FFFFFF
+		${CustomSetFont} $txb_AppDocument "微软雅黑" 10 550
+		
+		${NSD_CreateLabel} 220 610 180 25 $(MSG_FilesSize)
+    Pop $0
+    SetCtlColors $0 363636 FFFFFF
+		${CustomSetFont} $0 "微软雅黑" 10 400
+
+    ${NSD_CreateLabel} 380 610 200 25 $(MSG_AvailableSpace)
+    Pop $0
+    SetCtlColors $0 363636 FFFFFF
+		${CustomSetFont} $0 "微软雅黑" 10 400
+
+		;浏览按钮
+		${NSD_CreateButton} 500 580 60 25 ""
+    Pop $0
+    SkinBtn::Set /IMGID=$(MSG_Browse) $0
 #------------------------------------------
 #许可协议
 #------------------------------------------
@@ -407,14 +438,14 @@ Function Page.1
     Pop $Txt_Xllicense
     SetCtlColors $Txt_Xllicense 0074F3 FFFFFF
     ${NSD_OnClick} $Txt_Xllicense xllicense
- 		
+    
+ 		;贴背景大图
     ${NSD_CreateBitmap} 0 0 100% 100% ""
     Pop $BGImageLong
     ${NSD_SetImage} $BGImageLong $(MSG_BGImage_Long) $ImageHandleLong
     ShowWindow $BGImageLong ${SW_HIDE}
 
-    ;贴背景大图
-    ${NSD_CreateBitmap} 0 0 600 665 ""
+    ${NSD_CreateBitmap} 0 0 100% 100%  ""
     Pop $BGImage
     ${NSD_SetImage} $BGImage $(MSG_BGImage) $ImageHandle
     call EnglishPageSmall
@@ -426,8 +457,7 @@ FunctionEnd
 
 Function Page.1leave
 	${NSD_GetText} $txb_AppFolder  $R0  ;获得设置的安装路径
-
-   ;判断目录是否正确
+  ;判断目录是否正确
 	ClearErrors
 	CreateDirectory "$R0"
 	IfErrors 0 +3
@@ -448,10 +478,15 @@ FunctionEnd
 Function EnglishPageExpand
 	${If} $IsEnglish == True
 		nsResize::Set $txt_installDir 20 436 120 25
-		nsResize::Set $txb_AppFolder 140 435 334 25
-    nsResize::Set $btn_browse  480 435 60 25
+		nsResize::Set $txb_AppFolder 140 435 350 25
+    nsResize::Set $btn_browse  500 435 60 25
   	nsResize::Set $cbk_license 20 625 200 20
  		nsResize::Set $Txt_Xllicense 35 645 200 16
+    nsResize::Set $txt_FileSize 140 472 180 25
+    nsResize::Set $txt_AvailableSpace 320 472 200 25
+    nsResize::Set $btn_ins 480 635 92 16
+    nsResize::Set $txt_Userdata 100 580 170 25
+		nsResize::Set $txb_AppDocument 270 580 220 25
  	${EndIf}
 FunctionEnd
 
@@ -483,7 +518,7 @@ Function InstFilesPageShow
 		
     ${NSD_CreateBitmap} 0 0 100% 100% ""
     Pop $BGImage
-    ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
+    ${NSD_SetImage} $BGImage $(MSG_BGImage) $ImageHandle
 
     GetFunctionAddress $0 NSD_TimerFun
     nsDialogs::CreateTimer $0 1
@@ -585,19 +620,25 @@ Function InstallFinish
     ;立即体验
     ${NSD_CreateButton} 210 380 180 48 ""
     Pop $btn_instend
-    SkinBtn::Set /IMGID=$PLUGINSDIR\btn_express.bmp $btn_instend
+    SkinBtn::Set /IMGID=$(MSG_ExperienceNow) $btn_instend
     GetFunctionAddress $3 onClickexpress
     SkinBtn::onClick $btn_instend $3
     
     ${NSD_CreateBitmap} 234 335 24 24 ""
 		Pop $0
 		${NSD_SetImage} $0 $PLUGINSDIR\successful.bmp $1
-
+		${If} $IsEnglish == True
+      nsResize::Set $0 170 335 24 24
+		${EndIf}
+		
 		${NSD_CreateLabel} 266 328 200 50 $(MSG_InstallSuccessful)
 		Pop $0
 		SetCtlColors $0 363636 FFFFFF
 		${CustomSetFont} $0 "微软雅黑" 18 400
 		
+		${If} $IsEnglish == True 
+      nsResize::Set $0 200 330 400 30
+		${EndIf}
 		;自定义安装按钮
     ${NSD_CreateButton} 488 436 92 16 ""
     Pop $btn_ins
@@ -608,7 +649,7 @@ Function InstallFinish
     ;贴背景大图
     ${NSD_CreateBitmap} 0 0 100% 100% ""
     Pop $BGImage
-    ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
+    ${NSD_SetImage} $BGImage $(MSG_BGImage) $ImageHandle
 
     GetFunctionAddress $0 onGUICallback
     WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
@@ -694,9 +735,9 @@ Function onCustonClick
     ShowWindow $tex_installOptions ${SW_SHOW}
     ShowWindow $ckb_cocos2d ${SW_SHOW}
     ShowWindow $ckb_CocosStudio ${SW_SHOW}
- 		nsResize::Set $btn_ins 480 585 92 16
- 		nsResize::Set $cbk_license 20 582 100 20
- 		nsResize::Set $Txt_Xllicense 124 585 100 16
+ 		nsResize::Set $btn_ins 480 635 92 16
+ 		nsResize::Set $cbk_license 20 635 100 20
+ 		nsResize::Set $Txt_Xllicense 124 640 100 16
     call EnglishPageExpand
  		Push "True"
  		Pop $flag
@@ -731,7 +772,7 @@ FunctionEnd
 
 ;立即体验按钮点击处理
 Function onClickexpress
-	MessageBox MB_OK '运行Cocos'
+	MessageBox MB_OK '$(MSG_ExperienceNow)'
 	ABORT
 FunctionEnd
 
@@ -858,9 +899,20 @@ Var ck8Flag
 Var otherText
 
 Function un.onInit
-    InitPluginsDir ;初始化插件
-    File `/ONAME=$PLUGINSDIR\bg.bmp` `images\UnPageBG.bmp` ;卸载页面背景
-    File `/ONAME=$PLUGINSDIR\logo.bmp` `images\UninstallLogo.bmp`
+		Push ${LANG_ENGLISH}
+   	Pop $LANGUAGE
+    InitPluginsDir ;初始化插件UnPageBG.bmp
+
+    File `/ONAME=$PLUGINSDIR\bg.bmp` `images\UninstallBG.bmp` ;卸载页面背景
+    File `/ONAME=$PLUGINSDIR\bg_CT.bmp` `images\UninstallBG_CT.bmp` ;卸载页面背景
+    File `/ONAME=$PLUGINSDIR\bg_EN.bmp` `images\UninstallBG_EN.bmp` ;卸载页面背景
+    
+    File `/ONAME=$PLUGINSDIR\bg_fb.bmp` `images\UnPageBG.bmp` ;卸载页面背景
+    
+    File `/ONAME=$PLUGINSDIR\finishBG.bmp` `images\UnPageFinishBG.bmp`
+    File `/ONAME=$PLUGINSDIR\finishBG_CT.bmp` `images\UnPageFinishBG_CT.bmp`
+    File `/ONAME=$PLUGINSDIR\finishBG_EN.bmp` `images\UnPageFinishBG_EN.bmp`
+    
     File `/ONAME=$PLUGINSDIR\ck1.bmp` `images\ck1.bmp`
     File `/ONAME=$PLUGINSDIR\ck1_1.bmp` `images\ck1_1.bmp`
     File `/ONAME=$PLUGINSDIR\ck1.png` `images\ck1.png`
@@ -868,7 +920,6 @@ Function un.onInit
     
     File `/ONAME=$PLUGINSDIR\cktrue.bmp` `images\cktrue.bmp`
     File `/ONAME=$PLUGINSDIR\ckfalse.bmp` `images\ckfalse.bmp`
-    File /oname=$PLUGINSDIR\button1.png images\button1.png
     File /oname=$PLUGINSDIR\Cocos.vsf "Skin\Cocos.vsf"
   	NSISVCLStyles::LoadVCLStyle  $PLUGINSDIR\Cocos.vsf
   	SkinBtn::Init "$PLUGINSDIR\ck1.bmp"
@@ -932,25 +983,14 @@ Function un.UnPageWelcome
   SetCtlColors $0 ""  transparent ;背景设成透明
   ${NSW_SetWindowSize} $0 520 400 ;改变Page大小
 
-  ${NSD_CreateLabel} 20 11 100 30 "Cocos卸载"
+  ${NSD_CreateLabel} 20 11 100 30 $(un.MSG_CocosUninstaller)
   Pop $R1
 	NSISVCLStyles::RemoveStyleControl $R1
-  SetCtlColors $R1 fffffff transparent
+  SetCtlColors $R1 A7BAF5 transparent
 	${CustomSetFont} $R1 "微软雅黑" 16 400
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $R1 $0
 	
-  ${NSD_CreateLabel} 113 247 287 30 "你讨厌我什么,我改还不好么?"
-  Pop $toolTipText
-  SetCtlColors $toolTipText fffffff transparent
-	${CustomSetFont} $toolTipText "RTWSYueGoTrial-Regular" 18 400
-	GetFunctionAddress $0 un.onGUICallback
-	WndProc::onCallback $toolTipText $0
-	NSISVCLStyles::RemoveStyleControl $toolTipText
-	
-	SetCtlColors $otherText b6d8fe 418BDB
-	${CustomSetFont} $otherText "微软雅黑" 10 500
-
   ${NSD_CreateButton} 112 325 150 40 "狠心卸载"
   Pop $0
   NSISVCLStyles::RemoveStyleControl $0
@@ -962,17 +1002,11 @@ Function un.UnPageWelcome
   Pop $0
   NSISVCLStyles::RemoveStyleControl $0
   
-	${NSD_CreateBitmap} 159 38 200 200 ""
-	Pop $0
-	${NSD_SetImage} $0 $PLUGINSDIR\logo.bmp $1
-	
-	GetFunctionAddress $3 un.onGUICallback
-  WndProc::onCallback $0 $3 ;处理无边框窗体移动
-  WndProc::onCallback $1 $3 ;处理无边框窗体移动
+
 ;贴背景大图
   ${NSD_CreateBitmap} 0 0 100% 100% ""
   Pop $BGImage
-  ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
+  ${NSD_SetImage} $BGImage $(un.MSG_UninstallBG) $ImageHandle
   
   GetFunctionAddress $0 un.onGUICallback
   WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
@@ -1004,10 +1038,10 @@ Function un.FeedbackPage
   ;SetCtlColors $0 ""  transparent ;背景设成透明
   ${NSW_SetWindowSize} $0 520 400 ;改变Page大小
 
-  ${NSD_CreateLabel} 20 11 100 30 "Cocos卸载"
+  ${NSD_CreateLabel} 20 11 100 30 $(un.MSG_CocosUninstaller)
   Pop $R1
   NSISVCLStyles::RemoveStyleControl $R1
-  SetCtlColors $R1 98c8fe transparent
+  SetCtlColors $R1 A7BAF5 transparent
 	${CustomSetFont} $R1 "微软雅黑" 10 700
 	;GetFunctionAddress $0 un.onGUICallback
 	;WndProc::onCallback $R1 $0
@@ -1019,7 +1053,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck1
   GetFunctionAddress $2 un.ck1Click
   SkinBtn::onClick $ck1 $2
-  ${NSD_CreateLabel} 76 90 124 20 "不会使用,也不容易学"
+  ${NSD_CreateLabel} 76 90 124 20 $(un.MSG_Reason1)
   pop $ck1Text
   NSISVCLStyles::RemoveStyleControl $ck1Text
   SetCtlColors $ck1Text 98c8fe transparent
@@ -1033,7 +1067,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck2
   GetFunctionAddress $2 un.ck2Click
   SkinBtn::onClick $ck2 $2
-	${NSD_CreateLabel} 296 90 130 20 "存在bug,经常崩溃"
+	${NSD_CreateLabel} 296 90 130 20 $(un.MSG_Reason2)
   pop $ck2Text
   NSISVCLStyles::RemoveStyleControl $ck2Text
   SetCtlColors $ck2Text 98c8fe transparent
@@ -1045,7 +1079,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck3
   GetFunctionAddress $2 un.ck3Click
   SkinBtn::onClick $ck3 $2
-	${NSD_CreateLabel} 76 120 130 20 "界面不友好,不好用"
+	${NSD_CreateLabel} 76 120 130 20 $(un.MSG_Reason3)
   pop $ck3Text
   NSISVCLStyles::RemoveStyleControl $ck3Text
   SetCtlColors $ck3Text 98c8fe transparent
@@ -1057,7 +1091,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck4
   GetFunctionAddress $2 un.ck4Click
   SkinBtn::onClick $ck4 $2
-	${NSD_CreateLabel} 296 120 130 20 "功能不完善"
+	${NSD_CreateLabel} 296 120 130 20 $(un.MSG_Reason4)
   pop $ck4Text
   NSISVCLStyles::RemoveStyleControl $ck4Text
   SetCtlColors $ck4Text 98c8fe transparent
@@ -1069,7 +1103,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck5
   GetFunctionAddress $2 un.ck5Click
   SkinBtn::onClick $ck5 $2
-	${NSD_CreateLabel} 76 152 130 20 "在开发中并不能帮到我"
+	${NSD_CreateLabel} 76 152 130 20 $(un.MSG_Reason5)
   pop $ck5Text
   NSISVCLStyles::RemoveStyleControl $ck5Text
   SetCtlColors $ck5Text 98c8fe transparent
@@ -1081,7 +1115,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck6
   GetFunctionAddress $2 un.ck6Click
   SkinBtn::onClick $ck6 $2
-	${NSD_CreateLabel} 296 152 130 20 "改用其他同类产品"
+	${NSD_CreateLabel} 296 152 130 20 $(un.MSG_Reason6)
   pop $ck6Text
   NSISVCLStyles::RemoveStyleControl $ck6Text
   SetCtlColors $ck6Text 98c8fe transparent
@@ -1093,7 +1127,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck7
   GetFunctionAddress $2 un.ck7Click
   SkinBtn::onClick $ck7 $2
-	${NSD_CreateLabel} 76 190 130 20 "其他原因"
+	${NSD_CreateLabel} 76 190 130 20 $(un.MSG_Reason7)
   pop $ck7Text
   NSISVCLStyles::RemoveStyleControl $ck7Text
   SetCtlColors $ck7Text 98c8fe transparent
@@ -1105,7 +1139,7 @@ Function un.FeedbackPage
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck8
   GetFunctionAddress $2 un.ck8Click
   SkinBtn::onClick $ck8 $2
-	${NSD_CreateLabel} 296 190 130 20 "重新安装"
+	${NSD_CreateLabel} 296 190 130 20 $(un.MSG_Reason8)
   pop $ck8Text
   NSISVCLStyles::RemoveStyleControl $ck8Text
   SetCtlColors $ck8Text 98c8fe transparent
@@ -1139,7 +1173,7 @@ Function un.FeedbackPage
 ;贴背景大图
   ${NSD_CreateBitmap} 0 0 100% 100% ""
   Pop $BGImage
-  ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
+  ${NSD_SetImage} $BGImage $PLUGINSDIR\bg_fb.bmp $ImageHandle
 
   GetFunctionAddress $0 un.onGUICallback
   WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
@@ -1219,7 +1253,7 @@ Function un.InstallFiles
   ${NSD_CreateLabel} 20 11 100 30 "Cocos卸载"
   Pop $R1
 	NSISVCLStyles::RemoveStyleControl $R1
-  SetCtlColors $R1 fffffff transparent
+  SetCtlColors $R1 A7BAF5 transparent
 	${CustomSetFont} $R1 "微软雅黑" 16 400
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $R1 $0
@@ -1284,7 +1318,7 @@ Function un.InstallFinish
   ${NSD_CreateLabel} 20 11 100 30 "Cocos卸载"
   Pop $R1
 	NSISVCLStyles::RemoveStyleControl $R1
-  SetCtlColors $R1 fffffff transparent
+  SetCtlColors $R1 A7BAF5 transparent
 	${CustomSetFont} $R1 "微软雅黑" 16 400
 	GetFunctionAddress $0 un.onGUICallback
 	WndProc::onCallback $R1 $0
@@ -1294,25 +1328,10 @@ Function un.InstallFinish
   GetFunctionAddress $1 un.FinishClick
   SkinBtn::onClick $0 $1
 
-  ${NSD_CreateLabel} 100 247 300 30 "感谢与你一起度过了美好时光~"
-  Pop $toolTipText
-  SetCtlColors $toolTipText fffffff transparent
-	${CustomSetFont} $toolTipText "RTWSYueGoTrial-Regular" 18 400
-	GetFunctionAddress $0 un.onGUICallback
-	WndProc::onCallback $toolTipText $0
-	NSISVCLStyles::RemoveStyleControl $toolTipText
-
-	${NSD_CreateBitmap} 159 38 200 200 ""
-	Pop $0
-	${NSD_SetImage} $0 $PLUGINSDIR\logo.bmp $1
-
-	GetFunctionAddress $3 un.onGUICallback
-  WndProc::onCallback $0 $3 ;处理无边框窗体移动
-
 ;贴背景大图
   ${NSD_CreateBitmap} 0 0 100% 100% ""
   Pop $BGImage
-  ${NSD_SetImage} $BGImage $PLUGINSDIR\bg.bmp $ImageHandle
+  ${NSD_SetImage} $BGImage $(un.MSG_FinishBG) $ImageHandle
 
   GetFunctionAddress $0 un.onGUICallback
   WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
