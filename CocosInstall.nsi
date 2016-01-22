@@ -524,7 +524,7 @@ Function InstFilesPageShow
     nsDialogs::CreateTimer $0 1
     
     GetFunctionAddress $0 AirBubblesPosition
-    nsDialogs::CreateTimer $0 1
+    nsDialogs::CreateTimer $0 1000
     
     GetFunctionAddress $0 onGUICallback
     WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
@@ -539,13 +539,15 @@ FunctionEnd
 Var proPosition
 Function AirBubblesPosition
 	SendMessage $PB_ProgressBar ${PBM_GETPOS} 0 0 $0
-	${IF} $proPosition < $0
+	IntOp $1 $0 + 1
+	${IF} $proPosition < 95
+		SendMessage $PB_ProgressBar ${PBM_SETPOS} $1 0
 		IntOp $proPosition $0 + 0
 		${NSD_SetText} $AirBubblesImage "$0%"
 		IntOp $0 $0 * 46
 		IntOp $0 $0 / 10
 		IntOp $0 $0 + 48
-	  nsResize::Set $AirBubblesImage $0 350 45 31
+	  nsResize::Set $AirBubblesImage $0 345 45 31
 	${EndIf}
 	
 FunctionEnd
@@ -580,20 +582,22 @@ Function InstallationMainFun
  		WriteUninstaller "$INSTDIR\uninst.exe"
     SetOutPath "$INSTDIR\Cocos Studio"
     SendMessage $PB_ProgressBar ${PBM_SETRANGE32} 0 100
-    Sleep 1000
-    SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
-  	;File /r "F:\Work3.0\Mono_3.0\build\Temp\ReleaseWin32\*.*"
+    ;SendMessage $PB_ProgressBar ${PBM_SETPOS} 10 0
+  	File /r "F:\Work3.0\Mono_3.0\build\Temp\ReleaseWin32\*.*"
   	;SetOutPath "$DOCUMENTS\Cocos1"
   	;File "F:\Work3.0\Mono_3.0\build\Builder\*.*"
   	SendMessage $PB_ProgressBar ${PBM_SETPOS} 20 0
+  	call AirBubblesPosition
+  	Sleep 180000
   	SetOutPath $INSTDIR
   	;File /r "F:\Work3.0\Mono_3.0\build\Temp\Temp.7z"
-  	SendMessage $PB_ProgressBar ${PBM_SETPOS} 30 0
+  	;SendMessage $PB_ProgressBar ${PBM_SETPOS} 30 0
   	
 		;GetFunctionAddress $R9 ServiceCallback
   	;Nsis7z::ExtractWithCallback "Temp.7z" $R9
   
     SendMessage $PB_ProgressBar ${PBM_SETPOS} 100 0
+    Call AirBubblesPosition
     Sleep 1000
     Call NextPage
 FunctionEnd
@@ -606,8 +610,6 @@ Function InstallFinish
     ShowWindow $0 ${SW_HIDE}
     GetDlgItem $0 $HWNDPARENT 3
     ShowWindow $0 ${SW_HIDE}
-
-
     nsDialogs::Create 1044
     Pop $0
     ${If} $0 == error
@@ -901,6 +903,13 @@ Var otherText
 Function un.onInit
 		Push ${LANG_ENGLISH}
    	Pop $LANGUAGE
+   	${If} $LANGUAGE == 1033
+    	Push True
+   		Pop $IsEnglish
+    ${Else}
+      Push False
+   		Pop $IsEnglish
+		${EndIf}
     InitPluginsDir ;初始化插件UnPageBG.bmp
 
     File `/ONAME=$PLUGINSDIR\bg.bmp` `images\UninstallBG.bmp` ;卸载页面背景
@@ -1014,6 +1023,34 @@ Function un.UnPageWelcome
   nsDialogs::Show
 FunctionEnd
 
+Function un.EnglishPage
+	${If} $IsEnglish == True
+		nsResize::Set $ck1 50 92 16 16
+  	nsResize::Set $ck1Text 76 90 180 30
+  
+		nsResize::Set $ck2 270 92 16 16
+		nsResize::Set $ck2Text 296 90 180 30
+
+		nsResize::Set $ck3 50 122 16 16
+		nsResize::Set $ck3Text 76 120 180 30
+
+		nsResize::Set $ck4 270 122 16 16
+		nsResize::Set $ck4Text 296 120 180 30
+
+		nsResize::Set $ck5 50 154 16 16
+		nsResize::Set $ck5Text 76 152 180 30
+
+		nsResize::Set $ck6 270 154 16 16
+		nsResize::Set $ck6Text 296 152 180 30
+
+		nsResize::Set $ck7 50 187 16 16
+		nsResize::Set $ck7Text 76 185 180 30
+  
+		nsResize::Set $ck8 270 187 16 16
+		nsResize::Set $ck8Text 296 185 180 30
+	${EndIf}
+FunctionEnd
+
 Function un.FeedbackPage
   GetDlgItem $0 $HWNDPARENT 1 ;下一步/关闭 按钮
   ShowWindow $0 ${SW_HIDE}    ;隐藏
@@ -1042,9 +1079,15 @@ Function un.FeedbackPage
   Pop $R1
   NSISVCLStyles::RemoveStyleControl $R1
   SetCtlColors $R1 A7BAF5 transparent
-	${CustomSetFont} $R1 "微软雅黑" 10 700
+	${CustomSetFont} $R1 $(un.MSg_FontName) 10 700
 	;GetFunctionAddress $0 un.onGUICallback
 	;WndProc::onCallback $R1 $0
+	
+	${NSD_CreateLabel} 50 46 300 20 $(un.MSG_LasterTitle)
+  pop $0
+  NSISVCLStyles::RemoveStyleControl $0
+  SetCtlColors $0 fffffff transparent
+	${CustomSetFont} $0 $(un.MSg_FontName) 10 700
 	
 	;反馈选项--------------------------------------------------------------
 	${NSD_CreateButton} 50 92 16 16 ""
@@ -1057,7 +1100,7 @@ Function un.FeedbackPage
   pop $ck1Text
   NSISVCLStyles::RemoveStyleControl $ck1Text
   SetCtlColors $ck1Text 98c8fe transparent
-	${CustomSetFont} $ck1Text "微软雅黑" 10 700
+	${CustomSetFont} $ck1Text $(un.MSg_FontName) 10 700
 	;GetFunctionAddress $0 un.MouseDown
 	;WndProc::onCallback $ck1Text $0
 	
@@ -1071,7 +1114,7 @@ Function un.FeedbackPage
   pop $ck2Text
   NSISVCLStyles::RemoveStyleControl $ck2Text
   SetCtlColors $ck2Text 98c8fe transparent
-	${CustomSetFont} $ck2Text "微软雅黑" 10 700
+	${CustomSetFont} $ck2Text $(un.MSg_FontName) 10 700
 
 	${NSD_CreateButton} 50 122 16 16 ""
   Pop $ck3
@@ -1083,7 +1126,7 @@ Function un.FeedbackPage
   pop $ck3Text
   NSISVCLStyles::RemoveStyleControl $ck3Text
   SetCtlColors $ck3Text 98c8fe transparent
-	${CustomSetFont} $ck3Text "微软雅黑" 10 700
+	${CustomSetFont} $ck3Text $(un.MSg_FontName) 10 700
 
 	${NSD_CreateButton} 270 122 16 16 ""
   Pop $ck4
@@ -1095,7 +1138,7 @@ Function un.FeedbackPage
   pop $ck4Text
   NSISVCLStyles::RemoveStyleControl $ck4Text
   SetCtlColors $ck4Text 98c8fe transparent
-	${CustomSetFont} $ck4Text "微软雅黑" 10 700
+	${CustomSetFont} $ck4Text $(un.MSg_FontName) 10 700
 
 	${NSD_CreateButton} 50 154 16 16 ""
   Pop $ck5
@@ -1107,7 +1150,7 @@ Function un.FeedbackPage
   pop $ck5Text
   NSISVCLStyles::RemoveStyleControl $ck5Text
   SetCtlColors $ck5Text 98c8fe transparent
-	${CustomSetFont} $ck5Text "微软雅黑" 10 700
+	${CustomSetFont} $ck5Text $(un.MSg_FontName) 10 700
 
 	${NSD_CreateButton} 270 154 16 16 ""
   Pop $ck6
@@ -1119,31 +1162,31 @@ Function un.FeedbackPage
   pop $ck6Text
   NSISVCLStyles::RemoveStyleControl $ck6Text
   SetCtlColors $ck6Text 98c8fe transparent
-	${CustomSetFont} $ck6Text "微软雅黑" 10 700
+	${CustomSetFont} $ck6Text $(un.MSg_FontName) 10 700
 
-	${NSD_CreateButton} 50 192 16 16 ""
+	${NSD_CreateButton} 50 187 16 16 ""
   Pop $ck7
   NSISVCLStyles::RemoveStyleControl $ck7
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck7
   GetFunctionAddress $2 un.ck7Click
   SkinBtn::onClick $ck7 $2
-	${NSD_CreateLabel} 76 190 130 20 $(un.MSG_Reason7)
+	${NSD_CreateLabel} 76 185 130 20 $(un.MSG_Reason7)
   pop $ck7Text
   NSISVCLStyles::RemoveStyleControl $ck7Text
   SetCtlColors $ck7Text 98c8fe transparent
-	${CustomSetFont} $ck7Text "微软雅黑" 10 700
+	${CustomSetFont} $ck7Text $(un.MSg_FontName) 10 700
 
-	${NSD_CreateButton} 270 192 16 16 ""
+	${NSD_CreateButton} 270 187 16 16 ""
   Pop $ck8
   NSISVCLStyles::RemoveStyleControl $ck8
   SkinBtn::Set /IMGID=$PLUGINSDIR\ckfalse.bmp $ck8
   GetFunctionAddress $2 un.ck8Click
   SkinBtn::onClick $ck8 $2
-	${NSD_CreateLabel} 296 190 130 20 $(un.MSG_Reason8)
+	${NSD_CreateLabel} 296 185 130 20 $(un.MSG_Reason8)
   pop $ck8Text
   NSISVCLStyles::RemoveStyleControl $ck8Text
   SetCtlColors $ck8Text 98c8fe transparent
-	${CustomSetFont} $ck8Text "微软雅黑" 10 700
+	${CustomSetFont} $ck8Text $(un.MSg_FontName) 10 700
 	;反馈选项  结束--------------------------------------------------------
 	
 	;${NSD_CreateTextMultiline} 50 220 420 70 "请填写其他原因"
@@ -1154,10 +1197,10 @@ Function un.FeedbackPage
 		"${__NSD_Text_STYLE}||${ES_MULTILINE}|${ES_WANTRETURN}|${ES_AUTOVSCROLL}|${ES_AUTOHSCROLL}|${WS_BORDER}" \
 		"${__NSD_Text_EXSTYLE}" \
 		50 220 420 70 \
-		"请填写其他原因"
+		$(un.OtherReason)
 		Pop $otherText
 	SetCtlColors $otherText b6d8fe 418BDB
-	${CustomSetFont} $otherText "微软雅黑" 10 500
+	${CustomSetFont} $otherText $(un.MSg_FontName) 10 500
 	EnableWindow $otherText 0
 	
 	${NSD_CreateButton} 112 325 150 40 "开始卸载"
@@ -1174,7 +1217,7 @@ Function un.FeedbackPage
   ${NSD_CreateBitmap} 0 0 100% 100% ""
   Pop $BGImage
   ${NSD_SetImage} $BGImage $PLUGINSDIR\bg_fb.bmp $ImageHandle
-
+	Call un.EnglishPage
   GetFunctionAddress $0 un.onGUICallback
   WndProc::onCallback $BGImage $0 ;处理无边框窗体移动
   WndProc::onCallback $BGImageLong $0 ;处理无边框窗体移动
@@ -1609,6 +1652,5 @@ Section Uninstall
 ; 清除安装程序创建的且在卸载时可能为空的子目录，对于递归添加的文件目录，请由最内层的子目录开始清除(注意，不要带 /r 参数，否则会失去 DelFileByLog 的意义)
   ;RMDir "$SMPROGRAMS\$ICONS_GROUP"
   ;Delete "$INSTDIR\install.log"
-
 	Call un.NextPage
 SectionEnd

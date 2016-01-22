@@ -86,6 +86,10 @@ LangString un.MSG_CocosUninstaller ${LANG_SIMPCHINESE} "Cocos 卸载"
 LangString un.MSG_CocosUninstaller ${LANG_TRADCHINESE} "Cocos 卸载"
 LangString un.MSG_CocosUninstaller ${LANG_ENGLISH} "Cocos Uninstaller"
 
+LangString un.MSG_LasterTitle ${LANG_SIMPCHINESE} "能问题你最后一个问题吗?"
+LangString un.MSG_LasterTitle ${LANG_TRADCHINESE} "能问题你最后一个问题吗?"
+LangString un.MSG_LasterTitle ${LANG_ENGLISH} "Please tell us why you are uninstalling cocos."
+
 LangString un.MSG_Reason1 ${LANG_SIMPCHINESE} "不会使用，也不容易学"
 LangString un.MSG_Reason1 ${LANG_TRADCHINESE} "不会使用，也不容易学"
 LangString un.MSG_Reason1 ${LANG_ENGLISH} "It is complex and hard to learn."
@@ -117,3 +121,13 @@ LangString un.MSG_Reason7 ${LANG_ENGLISH} "Other"
 LangString un.MSG_Reason8 ${LANG_SIMPCHINESE} "重新安装"
 LangString un.MSG_Reason8 ${LANG_TRADCHINESE} "重新安装"
 LangString un.MSG_Reason8 ${LANG_ENGLISH} "Reinstall"
+
+LangString un.MSg_FontName ${LANG_SIMPCHINESE} "微软雅黑"
+LangString un.MSg_FontName ${LANG_TRADCHINESE} "微软雅黑"
+LangString un.MSg_FontName ${LANG_ENGLISH} "Arial"
+
+LangString un.OtherReason ${LANG_SIMPCHINESE} "请填写其他原因"
+LangString un.OtherReason ${LANG_TRADCHINESE} "请填写其他原因"
+LangString un.OtherReason ${LANG_ENGLISH} "Type here…"
+
+
